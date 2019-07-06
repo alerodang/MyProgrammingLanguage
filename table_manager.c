@@ -89,3 +89,11 @@ bool existInScope(struct Symbol* symbol){
     }
     return false;
 }
+
+void openScope(){
+    currentDepth++;
+}
+
+void closeScope(){
+    currentDepth++;
+}

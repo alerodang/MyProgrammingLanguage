@@ -8,13 +8,14 @@
 %{
   #include <stdio.h>
   #include "table_manager.c"
+  #include "codeGenerator.c"
   extern FILE *yyin; 
   extern int numlin; 
   int yydebug=1; 
   void yyerror (char const*);
 %}
 
-%union { int number; char* string;}
+%union { int number; char* string; }
 
 %token <number> NUMBER
 %token <number> INT
@@ -38,9 +39,9 @@
 %token <number> COMMA
 %token <number> SEMICOLON
 %token <number> BREAK
+%token <number> QUOTE
 %token <string> STRING
 %token <string> VARIABLE
-%token <string> FUNCNAME
 %token <string> TEXT
 
 %type <number> root
@@ -59,12 +60,9 @@
 %type <number> structuresWord
 %type <number> logicalOperation
 %type <number> logicalOperator
-%type <number> logicalElement
 
 %left '-' '+'
 %left '*' '/'
-
-//Donde haya { openScope() y closeScope }
 
 %%
 
@@ -72,79 +70,79 @@ root : declaration
      | function
      ;
 
-declaration : INT VARIABLE SEMICOLON
+declaration : INT VARIABLE SEMICOLON {insertVariable($<string>2);}
             ;
 
-function : INT VARIABLE OPENINGBRACKET params CLOSINGBRACKET OPENINGCURLYBRACKET codeSet CLOSINGCURLYBRACKET
+function : INT VARIABLE {insertFunction($<string>2);}  OPENINGBRACKET {openScope();} params {closingScope();}CLOSINGBRACKET OPENINGCURLYBRACKET {openScope();} codeSet {closingScope();} CLOSINGCURLYBRACKET 
          ;
 
-params : INT VARIABLE COMMA params
-       | INT VARIABLE 
+params : INT VARIABLE {insertVariable($<string>2);} COMMA params 
+       | INT VARIABLE {insertVariable($<string>2);}
        ;
 
-codeSet : declaration 
+codeSet : declaration codeSet
+        | instruction codeSet
+        | controlStructure codeSet
+        | declaration
         | instruction
         | controlStructure
-        | codeSet codeSet
         ;
 
-instruction : assignation SEMICOLON
+instruction : assignation
             | aritmeticOperation SEMICOLON
             | return SEMICOLON
             | print SEMICOLON
-            | BREAK SEMICOLON
+            | BREAK SEMICOLON {breakCode();}
             ;
 
-assignation : VARIABLE '=' NUMBER 
+assignation : VARIABLE '=' NUMBER SEMICOLON {assignValue($<string>2,$<number>3);}
             ;  
 
-aritmeticOperation : aritmeticOperation '-' aritmeticOperation
-            | aritmeticOperation '+' aritmeticOperation
-            | aritmeticOperation '*' aritmeticOperation
-            | aritmeticOperation '/' aritmeticOperation
-            | '(' aritmeticOperation ')' {$$ = $2;}
-            | NUMBER {$$ = $1;}
+aritmeticOperation : aritmeticOperation '-' aritmeticOperation {$$ = substract($<number>1,$<number>3);}
+            | aritmeticOperation '+' aritmeticOperation {$$ = add($<number>1,$<number>3);}
+            | aritmeticOperation '*' aritmeticOperation {$$ = multiply($<number>1, $<number>3);}
+            | aritmeticOperation '/' aritmeticOperation {$$ = divide($<number>1, $<number>3);}
+            | OPENINGBRACKET aritmeticOperation CLOSINGBRACKET {$$ = $<number>2;}
+            | NUMBER {$$ = $<number>1;}
             ;
 
-return : return VARIABLE
-       | return NUMBER
+return : RETURN VARIABLE {returnVariable($<number>2);}
+       | RETURN NUMBER {returnValue($<number>2);}
        ; 
 
 print : PRINT OPENINGBRACKET printableElement CLOSINGBRACKET 
       ;
 
-printableElement : VARIABLE
-                 | '\"' text '\"'
-                 | printableElement '+' printableElement
+printableElement : VARIABLE {printVariable($<number>1);)}
+                 | QUOTE text QUOTE {printText(($<number>1);)}
+                 | printableElement '+' printableElement {printLineJump();}
                  ;
 
-text : TEXT
-     | ' '
+text : TEXT {$$ = $<number>1;}
+     | ' '  {$$ = $<number>1;}
      ;
 
-controlStructure : structuresWord OPENINGBRACKET logicalOperation CLOSINGBRACKET OPENINGCURLYBRACKET codeSet CLOSINGCURLYBRACKET
+controlStructure : structuresWord OPENINGBRACKET {openScope();} logicalOperation {closingScope();} CLOSINGBRACKET OPENINGCURLYBRACKET {openScope();} codeSet {closing();} CLOSINGCURLYBRACKET
                  ;
 
-structuresWord : IF
-               | ELSE
-               | WHILE
+structuresWord : IF {startIf();}
+               | ELSE {startElse();}
+               | WHILE {startWhile();}
                ;
 
-logicalOperation : logicalElement logicalOperator logicalElement
+logicalOperation : VARIABLE logicalOperator VARIABLE {logicalOperate(($<number>1),($<number>3),($<string>1))}
+                 | VARIABLE logicalOperator NUMBER {logicalOperate(($<number>1),($<number>3),($<string>1))}
+                 | NUMBER logicalOperator NUMBER {logicalOperate(($<number>1),($<number>3),($<string>1))}
+                 | NUMBER logicalOperator VARIABLE {logicalOperate(($<number>1),($<number>3),($<string>1))}
                  ;
 
-logicalOperator : EQUAL 
-                | NOTEQUAL
-                | GREATER
-                | MINOR
-                | GREATEREQUAL
-                | MINOREQUAL
+logicalOperator : EQUAL ($$ = "eq")
+                | NOTEQUAL ($$ = "neq")
+                | GREATER ($$ = "gt")
+                | MINOR ($$ = "mt")
+                | GREATEREQUAL ($$ = "ge")
+                | MINOREQUAL ($$ = "me")
                 ;
-
-logicalElement : aritmeticOperation
-               | VARIABLE
-               | NUMBER
-               ;    
 
 %%
 

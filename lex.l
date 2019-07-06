@@ -31,6 +31,7 @@ while         							return WHILE
 \}          								return CLOSINGCURLYBRACKET;
 \(					          			return OPENINGBRACKET;
 \)                         	return CLOSINGBRACKET;
+\"													return QUOTE;	
 print                     	return PRINT;
 return                     	return RETURN;
 func                       	return FUNC;
@@ -41,6 +42,7 @@ break                      	return BREAK;
 
 {digito}+ 				          { yylval.num = atoi(yytext); return NUMBER; }
 {letra}{letdig}*						{ yylval.string = strdup(yytext); return VARIABLE; }
+{letdig}*										{ yylval.string = strdup(yytext); return TEXT; }
 [-+*/] 							        return yytext[0];
 \n 								          {numlin++; /* continua leyendo */}
 [ \t] |
@@ -49,7 +51,6 @@ break                      	return BREAK;
 <<EOF>> 						        return 0;   /* por defecto */
 
 %%
-//{letdig}+                   { yylval.string = strdup(yytext); return TEXT; }
 
 void error(char* mens) {
 	printf("Error lexico en linea %i: %s\n",numlin,mens);

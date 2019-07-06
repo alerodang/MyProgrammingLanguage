@@ -61,10 +61,11 @@
      COMMA = 277,
      SEMICOLON = 278,
      BREAK = 279,
-     STRING = 280,
-     VARIABLE = 281,
-     FUNCNAME = 282,
-     TEXT = 283
+     QUOTE = 280,
+     STRING = 281,
+     VARIABLE = 282,
+     FUNCNAME = 283,
+     TEXT = 284
    };
 #endif
 
@@ -75,12 +76,12 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 17 "sin.y"
- int number; char* string;
+#line 18 "sin.y"
+ int number; char* string; 
 
 
 /* Line 1676 of yacc.c  */
-#line 84 "sin.tab.h"
+#line 85 "sin.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
