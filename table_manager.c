@@ -2,46 +2,90 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <traducer.c>
 
-int pointer = 73728;
-int framePointer;
+struct Symbol* firstSymbol;
+struct Symbol* lastSymbol;
+struct Symbol* lastFunc;
+int tableSize = 0;
 
-// A symbol is everything inside the table, 
-// could be a variable or a function
-struct Symbol {
-    char id[20];
+int tablePointer = 73728;
+int currentDepth = 0;
+
+struct Symbol
+{
+    char* id;
+    int address; //absolute or relative
     char type;
-    int address;
-    int params;
+    int depth;
+    int localVariablesAmount;
+    struct Symbol *previousSymbol;
+    struct Symbol *nextSymbol;
+};
+
+void insertVariable(char *id){
+    struct Symbol* symbol = malloc(sizeof(struct Symbol));
+
+    symbol->id = malloc(sizeof(char) * strlen(id));
+    symbol->nextSymbol = NULL;
+    symbol->localVariablesAmount = 0;
+    symbol->depth = currentDepth;
+    symbol->type = currentDepth == 0 ? 'g' : 'l';
+    symbol->address = symbol->type == 'g' ? getStaticAddress() : getRelativeAddress();
+
+    strcpy(symbol->id, id);
+
+    existInScope(symbol) ? printf("Error") : linkSymbol(symbol);
 }
 
-void insertSymbol(char *id, int params){
-    struct Symbol* id = malloc(sizeof(struct symbol));
+void insertFunction(char *id){
+    struct Symbol* symbol = malloc(sizeof(struct Symbol));
+    
+    symbol->id = malloc(sizeof(char) * strlen(id));
+    symbol->nextSymbol = NULL;
+    symbol->localVariablesAmount = 0;
+    symbol->type = 'f';
+    symbol->address = NULL;
+    symbol->depth = 0;
 
-    symbol.id = malloc(sizeof(char) * strlen(id)); //¿Es necesario?
-    strcpy(symbol.id, id);
+    strcpy(symbol->id, id);
 
-    symbol.address = getAddress();
-    symbol.params = params;
-    if(params > 0){
-        symbol.type = "f"
-    } else {
-        symbol.type = "v"
-    } 
+    existInScope(symbol) ? printf("Error") : linkSymbol(symbol);
+    
 }
 
-void assignValueToVariable(char *id, int value){
-    int address = getVariableAddress(id);
-    storeValue(address, value); --> traducer.c
-}
-
-void getValueForVariable(char *id){
-    // int getValue(address); --traducer.c
+int getRelativeAddress(){
+    return (lastFunc->localVariablesAmount + 1) * 4;
 }
 
 int getAddress() {
-    pointer = pointer - 4;
-    return pointer;
+    tablePointer = tablePointer - 4;
+    return tablePointer;
 }
 
+void linkSymbol(struct Symbol* symbol){
+    if(tableSize == 0){
+        firstSymbol = symbol;
+        symbol->previousSymbol = NULL;
+    } else {
+        lastSymbol->nextSymbol = symbol;
+        symbol->previousSymbol = lastSymbol;
+    }
+    if(symbol->type == "f") lastFunc = symbol;
+    if(symbol->type == "l") lastFunc->localVariablesAmount++;
+    tableSize ++;
+    lastSymbol = symbol;
+}
+
+bool existInScope(struct Symbol* symbol){
+    struct Symbol* currentSymbol = lastSymbol;
+    
+    bool hasSameDepth;
+    bool hasSameId;
+
+    for(int i = tableSize; i > 0; i--){
+        hasSameDepth = currentSymbol->depth == depth;
+        hasSameId = strcmp(currentSymbol->id, id) == 0);
+        hasSameDepth && hasSameId ? return true : continue;
+    }
+    return false;
+}

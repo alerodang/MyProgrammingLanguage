@@ -19,9 +19,10 @@
 %token <number> NUMBER
 %token <number> INT
 %token <number> EQUAL
-%token <number> GRATER
+%token <number> NOTEQUAL
+%token <number> GREATER
 %token <number> MINOR
-%token <number> GRATEREQUAL
+%token <number> GREATEREQUAL
 %token <number> MINOREQUAL
 %token <number> OPPOSITE
 %token <number> IF
@@ -60,20 +61,25 @@
 %type <number> logicalOperator
 %type <number> logicalElement
 
+%left '-' '+'
+%left '*' '/'
+
+//Donde haya { openScope() y closeScope }
+
 %%
 
-root : declaration
+root : declaration 
      | function
      ;
 
-declaration : INT VARIABLE SEMICOLON { insertSymbol($<string>2)) }
+declaration : INT VARIABLE SEMICOLON
             ;
 
-function : INT FUNCNAME OPENINGBRACKET params CLOSINGBRACKET OPENINGCURLYBRACKET codeSet CLOSINGCURLYBRACKET
+function : INT VARIABLE OPENINGBRACKET params CLOSINGBRACKET OPENINGCURLYBRACKET codeSet CLOSINGCURLYBRACKET
          ;
 
 params : INT VARIABLE COMMA params
-       | INT VARIABLE
+       | INT VARIABLE 
        ;
 
 codeSet : declaration 
@@ -92,11 +98,11 @@ instruction : assignation SEMICOLON
 assignation : VARIABLE '=' NUMBER 
             ;  
 
-aritmeticOperation : exp '-' exp
-            | exp '+' exp
-            | exp '*' exp
-            | exp '/' exp
-            | '(' exp ')' {$$ = $2;}
+aritmeticOperation : aritmeticOperation '-' aritmeticOperation
+            | aritmeticOperation '+' aritmeticOperation
+            | aritmeticOperation '*' aritmeticOperation
+            | aritmeticOperation '/' aritmeticOperation
+            | '(' aritmeticOperation ')' {$$ = $2;}
             | NUMBER {$$ = $1;}
             ;
 
@@ -104,26 +110,24 @@ return : return VARIABLE
        | return NUMBER
        ; 
 
-print : PRINT OPENINGBRAKET printableElement CLOSINGBRACKET 
+print : PRINT OPENINGBRACKET printableElement CLOSINGBRACKET 
       ;
 
 printableElement : VARIABLE
-                 | '\"' TEXT '\"'
+                 | '\"' text '\"'
                  | printableElement '+' printableElement
                  ;
 
 text : TEXT
-     | NUMBER
      | ' '
-     | text
      ;
 
-controlStructure : structuresWord OPENINGBRAKET logicalOperation CLOSINGBRACKET OPENINGCURLYBRACKET codeSet CLOSINGCURLYBRACKET
+controlStructure : structuresWord OPENINGBRACKET logicalOperation CLOSINGBRACKET OPENINGCURLYBRACKET codeSet CLOSINGCURLYBRACKET
                  ;
 
-structuresWord : if
-               | else
-               | while
+structuresWord : IF
+               | ELSE
+               | WHILE
                ;
 
 logicalOperation : logicalElement logicalOperator logicalElement
@@ -131,7 +135,7 @@ logicalOperation : logicalElement logicalOperator logicalElement
 
 logicalOperator : EQUAL 
                 | NOTEQUAL
-                | GRATER
+                | GREATER
                 | MINOR
                 | GREATEREQUAL
                 | MINOREQUAL

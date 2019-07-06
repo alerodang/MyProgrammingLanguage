@@ -9,18 +9,19 @@ digito [0-9]
 guion [-|_]
 letdig {letra}|{digito}|{guion}
 comment //.*\n
-grater >
+greater >
 minor <
-graterequal >=
+greaterequal >=
 minorequal <=
 
 %%
 
 int 							          return INT
 == 								          return EQUAL
-{grater}                    return GRATER
+!=													return NOTEQUAL
+{greater}                   return GREATER
 {minor} 								    return MINOR
-{graterequal} 							return GRATEREQUAL
+{greaterequal} 							return GREATEREQUAL
 {minorequal} 								return MINOREQUAL
 ! 								          return OPPOSITE
 if 								          return IF
@@ -40,7 +41,6 @@ break                      	return BREAK;
 
 {digito}+ 				          { yylval.num = atoi(yytext); return NUMBER; }
 {letra}{letdig}*						{ yylval.string = strdup(yytext); return VARIABLE; }
-{letra}+                    { yylval.string = strdup(yytext); return TEXT; }
 [-+*/] 							        return yytext[0];
 \n 								          {numlin++; /* continua leyendo */}
 [ \t] |
@@ -49,6 +49,7 @@ break                      	return BREAK;
 <<EOF>> 						        return 0;   /* por defecto */
 
 %%
+//{letdig}+                   { yylval.string = strdup(yytext); return TEXT; }
 
 void error(char* mens) {
 	printf("Error lexico en linea %i: %s\n",numlin,mens);
